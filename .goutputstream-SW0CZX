@@ -33,8 +33,7 @@ THE SOFTWARE.
 #include <iomanip>
 #include <fstream>
 #include <unistd.h>
-
-#define PATH_MAX        4096
+#include <sys/param.h>
 
 using namespace cv;
 using namespace std;
@@ -44,7 +43,6 @@ const char* keys =
 {
     "{c  camera   |         | use camera or not}"
     "{fn file_name|../data/tree.avi | movie file        }"
-    "{l label     |         | dataset label }"
 };
 
 int main(int argc, const char** argv)
@@ -55,19 +53,17 @@ int main(int argc, const char** argv)
 
     Mat image;
     int framecount = 0;
-    int label = 0;
 
     stringstream ss;
     string name = "frame_";
     string type = ".jpg";
 
-    ofstream ofs;
-    char path[PATH_MAX]; // for printing the image path           
+    char path[MAXPATHLEN]; // for printing the image path
+    int label = 0;
 
     CommandLineParser parser(argc, argv, keys);
     bool useCamera = parser.has("camera");
     string file = parser.get<string>("file_name");
-    label = parser.get<int>("label");
 
     VideoCapture capture;
     namedWindow("frame", WINDOW_NORMAL);
@@ -84,8 +80,6 @@ int main(int argc, const char** argv)
     if(capture.isOpened())
     {
         cout << "Capture is opened" << endl;
-        ofs.open("train.txt");
-
         for(;;)
         {
             capture >> image;
@@ -103,8 +97,9 @@ int main(int argc, const char** argv)
             if( k == 27 ) break;
 
             imwrite(filename, image);
-            getcwd(path, PATH_MAX);
-            ofs<< path << "/" << filename <<" "<< label <<"\n";
+            getcwd(path, MAXPATHLEN);
+            fprintf("pwd -> %s/%s %d\n", path,filename,label);
+            
             framecount++;
         }
     }
@@ -115,7 +110,6 @@ int main(int argc, const char** argv)
         imshow("frame", image);
         waitKey(0);
     }
-    ofs.close();
     return 0;
 }
 
@@ -124,5 +118,5 @@ static void help()
 {
  printf("\nDo frame extraction from a video file. \n" 
  "Usage: \n"
-"			./frame_extraction [--camera]=<use camera, if this key is present>, [--file_name]=<path to movie file>, [--label]=<dataset int label, default is 0> \n\n");
+"			./frame_extraction [--camera]=<use camera, if this key is present>, [--file_name]=<path to movie file> \n\n");
 }
